@@ -191,8 +191,8 @@ class AccountInvoice(models.Model):
         invoice_line_obj = self.env['account.invoice.line']
         for new_invoice_id in invoices_info:
             if 'sale.order' in self.env.registry:
-                todos = old_invoices.mapped('invoice_line_ids').\
-                    mapped('sale_line_ids').mapped('order_id')
+                todos = old_invoices.mapped(
+                    'invoice_line_ids.sale_line_ids.order_id')
                 todos.write({'invoice_ids': [(4, new_invoice_id)]})
                 for org_so in todos:
                     for so_line in org_so.order_line:

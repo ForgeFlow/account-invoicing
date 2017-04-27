@@ -186,15 +186,12 @@ class AccountInvoice(models.Model):
             old_invoices = self.env['account.invoice'].browse(old_ids)
             old_invoices.action_invoice_cancel()
 
-        # make link between original sale order or purchase order
+        # make link between original sale order
         # None if sale is not installed
-        so_obj = self.env['sale.order'] \
-            if 'sale.order' in self.env.registry else False
         invoice_line_obj = self.env['account.invoice.line']
-        # None if purchase is not installed
         for new_invoice_id in invoices_info:
-            if so_obj:
-                todos = so_obj.search(
+            if 'sale.order' in self.env.registry:
+                todos = self.env['sale.order'].search(
                     [('invoice_ids', 'in', invoices_info[new_invoice_id])])
                 todos.write({'invoice_ids': [(4, new_invoice_id)]})
                 for org_so in todos:

@@ -186,22 +186,22 @@ class AccountInvoice(models.Model):
             old_invoices = self.env['account.invoice'].browse(old_ids)
             old_invoices.action_invoice_cancel()
 
-        # make link between original sale order
+        # Make link between original sale order
         # None if sale is not installed
         invoice_line_obj = self.env['account.invoice.line']
         for new_invoice_id in invoices_info:
             if 'sale.order' in self.env.registry:
-                todos = self.env['sale.order'].search(
-                    [('invoice_ids', 'in', invoices_info[new_invoice_id])])
+                todos = old_invoices.mapped('invoice_line_ids').\
+                    mapped('sale_line_ids').mapped('order_id')
                 todos.write({'invoice_ids': [(4, new_invoice_id)]})
                 for org_so in todos:
                     for so_line in org_so.order_line:
-                        invoice_line_ids = invoice_line_obj.search(
+                        invoice_line = invoice_line_obj.search(
                             [('product_id', '=', so_line.product_id.id),
                              ('invoice_id', '=', new_invoice_id)])
-                        if invoice_line_ids:
+                        if invoice_line:
                             so_line.write(
-                                {'invoice_lines': [(6, 0, invoice_line_ids)]})
+                                {'invoice_lines': [(6, 0, invoice_line.ids)]})
 
         # recreate link (if any) between original analytic account line
         # (invoice time sheet for example) and this new invoice

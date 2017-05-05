@@ -28,7 +28,7 @@ class AccountInvoice(models.Model):
             'product_id', 'account_id', 'account_analytic_id',
             'uom_id'
         ]
-        for field in ['analytics_id']:
+        for field in ['sale_line_ids']:
             if field in self.env['account.invoice.line']._fields:
                 fields.append(field)
         return fields
@@ -81,12 +81,14 @@ class AccountInvoice(models.Model):
                     if not field_val:
                         field_val = False
                 if (isinstance(field_val, browse_record) and
-                        field != 'invoice_line_tax_ids'):
+                        field != 'invoice_line_tax_ids' and
+                        field != 'sale_line_ids'):
                     field_val = field_val.id
                 elif isinstance(field_val, browse_null):
                     field_val = False
                 elif (isinstance(field_val, list) or
-                        field == 'invoice_line_tax_ids'):
+                        field == 'invoice_line_tax_ids' or
+                        field == 'sale_line_ids'):
                     field_val = ((6, 0, tuple([v.id for v in field_val])),)
                 list_key.append((field, field_val))
             list_key.sort()
@@ -119,8 +121,8 @@ class AccountInvoice(models.Model):
             else:
                 if account_invoice.name and keep_references:
                     invoice_infos['name'] = \
-                        (invoice_infos['name'] or '') + \
-                        (' %s' % (account_invoice.name,))
+                        (invoice_infos['name'] or '') + ' ' + \
+                        account_invoice.name
                 if account_invoice.origin and \
                         account_invoice.origin not in origins:
                     invoice_infos['origin'] = \
@@ -130,17 +132,16 @@ class AccountInvoice(models.Model):
                 if account_invoice.reference \
                         and account_invoice.reference not in client_refs:
                     invoice_infos['reference'] = \
-                        (invoice_infos['reference'] or '') + \
-                        (' %s' % (account_invoice.reference,))
+                        (invoice_infos['reference'] or '') + ' ' + \
+                        account_invoice.reference
                     client_refs.add(account_invoice.reference)
 
             for invoice_line in account_invoice.invoice_line_ids:
-                cols = self._get_invoice_line_key_cols()
                 line_key = make_key(
-                    invoice_line, cols)
+                    invoice_line, self._get_invoice_line_key_cols())
 
-                o_line = invoice_infos['invoice_line_ids'].setdefault(line_key,
-                                                                      {})
+                o_line = invoice_infos['invoice_line_ids'].\
+                    setdefault(line_key, {})
 
                 if o_line:
                     # merge the line with an existing line
@@ -191,13 +192,12 @@ class AccountInvoice(models.Model):
         invoice_line_obj = self.env['account.invoice.line']
         for new_invoice_id in invoices_info:
             if 'sale.order' in self.env.registry:
-                todos = old_invoices.mapped(
+                sale_todos = old_invoices.mapped(
                     'invoice_line_ids.sale_line_ids.order_id')
-                todos.write({'invoice_ids': [(4, new_invoice_id)]})
-                for org_so in todos:
+                for org_so in sale_todos:
                     for so_line in org_so.order_line:
                         invoice_line = invoice_line_obj.search(
-                            [('product_id', '=', so_line.product_id.id),
+                            [('id', 'in', so_line.invoice_lines.ids),
                              ('invoice_id', '=', new_invoice_id)])
                         if invoice_line:
                             so_line.write(
@@ -208,9 +208,9 @@ class AccountInvoice(models.Model):
         anal_line_obj = self.env['account.analytic.line']
         if 'invoice_id' in anal_line_obj._fields:
             for new_invoice_id in invoices_info:
-                todos = anal_line_obj.search(
+                anal_todos = anal_line_obj.search(
                     [('invoice_id', 'in', invoices_info[new_invoice_id])])
-                todos.write({'invoice_id': new_invoice_id})
+                anal_todos.write({'invoice_id': new_invoice_id})
 
         for new_invoice in allnewinvoices:
             new_invoice.compute_taxes()

@@ -185,7 +185,7 @@ class AccountInvoice(models.Model):
             allnewinvoices.append(newinvoice)
             # cancel old invoices
             old_invoices = self.env['account.invoice'].browse(old_ids)
-            old_invoices.action_invoice_cancel()
+            old_invoices.with_context(is_merge=True).action_invoice_cancel()
 
         # Make link between original sale order
         # None if sale is not installed

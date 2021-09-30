@@ -14,9 +14,13 @@
                     string="Request Validation"
                     attrs="{'invisible': ['|',('need_validation', '!=', True),('rejected','=',True),('state','=', 'draft')]}"
                     type="object"/>
+                <button name="action_request_custom_validation"
+                    string="Request Custom Validation"
+                    attrs="{'invisible': ['|','|',('need_validation', '!=', True),('rejected','=',True),('state','not in',['draft'])]}"
+                    type="object"/>
                 <button name="restart_validation"
                     string="Restart Validation"
-                    attrs="{'invisible': ['|',('review_ids', '=', []),('state', '=', 'open')]}"
+                    attrs="{'invisible': ['|',('review_ids', '=', []),('state','not in',['draft'])]}"
                     type="object"/>
             </xpath>
 
@@ -74,9 +78,13 @@
                     string="Request Validation"
                     attrs="{'invisible': ['|',('need_validation', '!=', True),('rejected','=',True),('state','=', 'draft')]}"
                     type="object"/>
+                <button name="action_request_custom_validation"
+                    string="Request Custom Validation"
+                    attrs="{'invisible': ['|','|',('need_validation', '!=', True),('rejected','=',True),('state','not in',['draft'])]}"
+                    type="object"/>
                 <button name="restart_validation"
                     string="Restart Validation"
-                    attrs="{'invisible': ['|',('review_ids', '=', []),('state', '=', 'open')]}"
+                    attrs="{'invisible': ['|',('review_ids', '=', []),('state','not in',['draft'])]}"
                     type="object"/>
             </xpath>
 

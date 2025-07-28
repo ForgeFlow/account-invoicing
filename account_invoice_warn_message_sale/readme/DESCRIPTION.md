@@ -1,0 +1,1 @@
+Ensures the invoice warn message shows when the invoice is created from the sales order.

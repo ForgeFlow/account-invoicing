@@ -11,7 +11,7 @@
     "depends": ["sale_management"],
     "data": [
         "security/ir.model.access.csv",
-        "views/res_config_settings_views.xml",
+        # "views/res_config_settings_views.xml",
         "views/res_partner_views.xml",
         "views/sale_invoicing_grouping_criteria_views.xml",
     ],

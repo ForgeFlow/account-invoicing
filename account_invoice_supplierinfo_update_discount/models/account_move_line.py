@@ -10,16 +10,14 @@ class AccountMoveLine(models.Model):
 
     def _is_matching_supplierinfo(self, supplierinfo):
         res = super()._is_matching_supplierinfo(supplierinfo)
-        discount = self.discount1 if "discount1" in self._fields else self.discount
-        return res and (discount == supplierinfo.discount)
+        return res and (self.discount == supplierinfo.discount)
 
     def _prepare_supplier_wizard_line(self, supplierinfo):
         res = super()._prepare_supplier_wizard_line(supplierinfo)
-        discount = self.discount1 if "discount1" in self._fields else self.discount
         res.update(
             {
                 "current_discount": supplierinfo and supplierinfo.discount,
-                "new_discount": discount,
+                "new_discount": self.discount,
             }
         )
         return res

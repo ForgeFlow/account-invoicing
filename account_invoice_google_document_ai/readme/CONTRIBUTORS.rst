@@ -1,2 +1,0 @@
-* Enric Tobella
-* Joan Sisquella

@@ -17,8 +17,4 @@
         "views/sale_order_views.xml",
         "wizards/account_move_reversal_view.xml",
     ],
-    "external_dependencies": {
-        "python": ["openupgradelib"],
-    },
-    "pre_init_hook": "pre_init_hook",
 }

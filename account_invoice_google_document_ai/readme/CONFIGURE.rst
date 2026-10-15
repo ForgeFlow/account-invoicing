@@ -7,3 +7,6 @@ For the service account, we need to give it permissions to access Google Documen
 We need to store the JSON File.
 
 With all this information we can add the information on our Odoo instance on `Invoicing \ Settings`.
+
+In 13.0 the Odoo image runs on Python 3.6, so the latest compatible version of
+the library is ``google-cloud-documentai==1.4.2``.

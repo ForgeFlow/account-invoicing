@@ -2,18 +2,18 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import base64
+from unittest.mock import patch
 
 from google.auth import credentials as ga_credentials
 from google.cloud import documentai_v1
 from google.cloud.documentai_v1.types import document_processor_service
 from google.oauth2 import service_account
 from google.protobuf import json_format
-from mock import patch
 
 from odoo import tools
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
-from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.account.tests.account_test_savepoint import AccountTestInvoicingCommon
 
 
 @tagged("post_install", "-at_install")
@@ -32,9 +32,19 @@ class TestGoogleDocumentAi(AccountTestInvoicingCommon):
             }
         )
 
+    @classmethod
+    def _init_invoice_without_lines(cls, invoice_date):
+        # In 13.0, init_invoice always adds two product lines
+        move_form = Form(
+            cls.env["account.move"].with_context(default_type="in_invoice")
+        )
+        move_form.invoice_date = invoice_date
+        move_form.partner_id = cls.partner_a
+        return move_form.save()
+
     def test_ocr_process_manually(self):
         self.company_data["company"].ocr_google_enabled = "send_manual"
-        move = self.init_invoice("in_invoice", self.env["res.partner"], "2023-01-01")
+        move = self._init_invoice_without_lines("2023-01-01")
         self.assertFalse(move.line_ids)
         move.message_post(
             attachments=[
@@ -74,7 +84,7 @@ class TestGoogleDocumentAi(AccountTestInvoicingCommon):
 
     def test_ocr_process_automatically(self):
         self.company_data["company"].ocr_google_enabled = "send_automatically"
-        move = self.init_invoice("in_invoice", self.env["res.partner"], "2023-01-01")
+        move = self._init_invoice_without_lines("2023-01-01")
         self.assertFalse(move.line_ids)
 
         with patch.object(
@@ -149,6 +159,6 @@ class TestGoogleDocumentAi(AccountTestInvoicingCommon):
             )
             process.return_value = resp
             self.env["account.journal"].with_context(
-                default_move_type="in_invoice"
+                default_type="in_invoice"
             ).create_invoice_from_attachment(attachment.ids)
         # self.assertTrue(move.invoice_line_ids)

@@ -118,21 +118,9 @@ class AccountMoveGoogleDocumentAi(models.AbstractModel):
 
     def _ocr_field_parser(self):
         return {
-            "total_amount": (
-                "amount_total",
-                self._parse_ocr_float,
-                "control",
-            ),
-            "net_amount": (
-                "amount_untaxed",
-                self._parse_ocr_float,
-                "control",
-            ),
-            "total_tax_amount": (
-                "amount_tax",
-                self._parse_ocr_float,
-                "control",
-            ),
+            "total_amount": ("amount_total", self._parse_ocr_float, "control",),
+            "net_amount": ("amount_untaxed", self._parse_ocr_float, "control",),
+            "total_tax_amount": ("amount_tax", self._parse_ocr_float, "control",),
             "invoice_date": ("invoice_date", self._parse_ocr_date, "write"),
             "due_date": ("invoice_date_due", self._parse_ocr_date, "write"),
             "invoice_id": ("ref", self._parse_ocr_text, "write"),
@@ -240,12 +228,20 @@ class AccountMoveGoogleDocumentAi(models.AbstractModel):
         context = {}
         if invoice_data["context"]:
             context.update(invoice_data["context"])
-        invoice = (
-            self.env["account.move"]
-            .with_company(company.id)
-            .with_context(**context)
-            .create({})
+        # with_company() does not exist in 13.0: put the company first in the
+        # allowed companies so that env.company (default journal) is the one
+        # detected, and force it for the company dependent fields.
+        allowed_company_ids = self.env.context.get(
+            "allowed_company_ids", self.env.user.company_ids.ids
         )
+        context.update(
+            {
+                "allowed_company_ids": [company.id]
+                + [cid for cid in allowed_company_ids if cid != company.id],
+                "force_company": company.id,
+            }
+        )
+        invoice = self.env["account.move"].with_context(**context).create({})
         invoice.flush()
         return invoice
 

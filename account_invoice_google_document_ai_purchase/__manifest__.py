@@ -5,7 +5,7 @@
     "name": "Account Invoice Google Document Ai Purchase",
     "summary": """
         Integration with purchase""",
-    "version": "14.0.1.0.0",
+    "version": "13.0.1.0.0",
     "license": "AGPL-3",
     "author": "CreuBlanca,Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-invoicing",

@@ -2,18 +2,18 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import base64
+from unittest.mock import patch
 
 from google.auth import credentials as ga_credentials
 from google.cloud import documentai_v1
 from google.cloud.documentai_v1.types import document_processor_service
 from google.oauth2 import service_account
 from google.protobuf import json_format
-from mock import patch
 
-from odoo import tools
-from odoo.tests import tagged
+from odoo import fields, tools
+from odoo.tests import Form, tagged
 
-from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.account.tests.account_test_savepoint import AccountTestInvoicingCommon
 
 
 @tagged("post_install", "-at_install")
@@ -46,15 +46,39 @@ class TestGoogleDocumentAi(AccountTestInvoicingCommon):
             {
                 "name": "TESTPO",
                 "partner_id": cls.env.user.partner_id.id,
-                "order_line": [(0, 0, {"product_id": cls.product.id})],
+                # In 13.0 the line values are not computed on create
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": cls.product.id,
+                            "name": cls.product.name,
+                            "product_qty": 1.0,
+                            "product_uom": cls.product.uom_po_id.id,
+                            "price_unit": 0.0,
+                            "date_planned": fields.Datetime.now(),
+                        },
+                    )
+                ],
             }
         )
+
+    @classmethod
+    def _init_invoice_without_lines(cls, invoice_date):
+        # In 13.0, init_invoice always adds two product lines
+        move_form = Form(
+            cls.env["account.move"].with_context(default_type="in_invoice")
+        )
+        move_form.invoice_date = invoice_date
+        move_form.partner_id = cls.partner_a
+        return move_form.save()
 
     def test_ocr_process_ok(self):
         self.company_data["company"].ocr_google_enabled = "send_manual"
         self.purchase.button_confirm()
         self.purchase.order_line.qty_received_manual = 1
-        move = self.init_invoice("in_invoice", self.env["res.partner"], "2023-01-01")
+        move = self._init_invoice_without_lines("2023-01-01")
         self.assertFalse(move.line_ids)
         move.message_post(
             attachments=[
@@ -79,9 +103,7 @@ class TestGoogleDocumentAi(AccountTestInvoicingCommon):
             resp = document_processor_service.ProcessResponse()
             response = document_processor_service.ProcessResponse.pb(resp)
             json_format.Parse(
-                self.result,
-                response,
-                ignore_unknown_fields=True,
+                self.result, response, ignore_unknown_fields=True,
             )
             process.return_value = resp
             move.ocr_process()
